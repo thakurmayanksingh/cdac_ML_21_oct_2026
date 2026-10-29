@@ -35,51 +35,6 @@ def generate_synthetic_data(n_samples: int = 250, seed: int = 42) -> pd.DataFram
     })
     return df
 
-# x is predictor and y is target column
-def train_salary_model(
-        df: pd.DataFrame, target_col: str = "salary", test_size: float = 0.2
-) -> Tuple[LinearRegression, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, Dict[str, float],]:
-    # checking if target col is there in the df or not
-    if target_col not in df:
-        raise ValueError(f"Target Column '{target_col}' is not found in the DataFrame!!")
-
-    # making a copy of df so that main df dosen't get affected if something went wrong
-    df = df.copy()
-    # seperating features with target variable
-    X = df.drop(columns=[target_col])
-    y = df[target_col]
-
-    # split the data into training and testing splits
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
-
-    # initialize and train the linear regression model
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-
-    # make prediction on test set
-    y_pred = model.predict(X_test)
-
-    # calculating evaluation metrics
-    n = len(y_test)
-    p = X_train.shape[1]
-    r2 = r2_score(y_test, y_pred)
-    adj_r2 = 1 - ((1-r2) * (n-1) / (n-p-1)) # adj_r2 = adjusted r2
-
-    metrics = {
-        'MAE': mean_absolute_error(y_test, y_pred),
-        'MSE': mean_squared_error(y_test, y_pred),
-        'RMSE': root_mean_squared_error(y_test, y_pred),
-        'R2': r2,
-        'Adjusted_R2': adj_r2
-    }
-
-    return model, X_train, X_train, y_train, y_test, metrics
-
-def predict_new_candidate_salary(model: LinearRegression, candidate_data: pd.DataFrame,) -> pd.DataFrame:
-    predictions = model.predict(candidate_data)
-    result_df = candidate_data.copy()
-    result_df['predicted_salary'] = predictions
-    return result_df
 
 def main():
     print("=" * 60)
@@ -87,48 +42,6 @@ def main():
     df = generate_synthetic_data()
     print(df.head())
     print("=" * 60)
-    
-    model, X_train, X_test, y_train, y_test, metrics = train_salary_model(df)
-
-    # print("Evaluation Metrics")
-    # for metric, value in metrics.items():
-    #     print(f"{metric}: {value:.2f}")
-
-    df_metrics = pd.DataFrame([metrics])
-    print("Evaluation Metrics")
-    print(df_metrics.T)
-
-    print("_"*60)
-    print(f"Base Intercept: {model.intercept_}")
-    coef_df = pd.DataFrame({
-        "Feature": X_train.columns,
-        "Weights_learned": model.coef_
-    }).sort_values(by="Weights_learned", ascending=False)
-    print("Model Coefficients:")
-    print(coef_df.to_string(index=False))
-    print("_"*60)
-
-    new_candidate_data = pd.DataFrame([
-        {
-            'years_experience': 3.5,
-            'certifications': 1,
-            'performance_rating': 3.8,
-            'hours_per_week': 42
-        },
-        {
-            'years_experience': 9.0,
-            'certifications': 4,
-            'performance_rating': 4.7,
-            'hours_per_week': 45.0
-        }
-    ])
-
-    inferference_results = predict_new_candidate_salary(model, new_candidate_data)
-    print('Inference Results:')
-    print(inferference_results.to_string(index=False))
-    print("_" * 60)
-
-
 
 if __name__ == "__main__":
     main()
